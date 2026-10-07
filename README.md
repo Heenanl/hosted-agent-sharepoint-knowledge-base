@@ -57,8 +57,8 @@ You also need:
   [region that supports agentic retrieval](https://learn.microsoft.com/azure/search/search-region-support),
   in the same Microsoft Entra tenant as Microsoft 365, with
   [role-based access enabled](https://learn.microsoft.com/azure/search/search-security-enable-roles)
-  (`az search service update --auth-options aadOrApiKey`). On a new service, wait until
-  `az search service show --query status` returns `running` before running the setup scripts.
+  (`az search service update -n <SEARCH_SERVICE> -g <SEARCH_RESOURCE_GROUP> --auth-options aadOrApiKey`). On a new service, wait until
+  `az search service show -n <SEARCH_SERVICE> -g <SEARCH_RESOURCE_GROUP> --query status -o tsv` returns `running` before running the setup scripts.
 - Azure CLI, Python 3.11+, PowerShell 7+, and `azd` 1.27.1+ with `azd ext install microsoft.foundry`.
 
 Grant the Search role to a security group of end users:
