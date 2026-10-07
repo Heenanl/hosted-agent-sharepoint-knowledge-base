@@ -25,7 +25,7 @@ def required_env(name: str) -> str:
 
 
 SEARCH_ENDPOINT = required_env("SEARCH_ENDPOINT").rstrip("/")
-API_VERSION = os.environ.get("SEARCH_API_VERSION", "2026-05-01-preview")
+API_VERSION = os.environ.get("SEARCH_API_VERSION", "2026-08-01-preview")
 KNOWLEDGE_BASE_NAME = required_env("KNOWLEDGE_BASE_NAME")
 OUTPUT_MODE = os.environ.get("KNOWLEDGE_BASE_OUTPUT_MODE", "extractiveData")
 REASONING_EFFORT = os.environ.get("RETRIEVAL_REASONING_EFFORT", "minimal")
