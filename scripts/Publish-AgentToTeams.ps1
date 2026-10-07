@@ -7,7 +7,7 @@
     where the Foundry portal has no one-click "Publish to Teams" button.
 
     Steps (per the official guidance):
-      1. Get the agent identity principal ID (Foundry Get agent API) and tenant ID.
+      1. Get the agent identity client ID (Foundry Get agent API) and tenant ID.
       2. Create/refresh the Azure Bot Service resource + Teams channel
          (infra/bot-service.bicep), pointed at the agent's Activity Protocol route.
       3. With -UseM365PublicEndpoint, admit Microsoft 365 / Teams source IPs to that
@@ -155,7 +155,7 @@ if (-not $BotName) {
     $BotName = $clean
 }
 
-# ── Step 1: agent identity principal ID + tenant ID ───────────────────────────
+# ── Step 1: agent identity client ID + tenant ID ───────────────────────────────
 Write-Info "==> Reading agent identity for '$AgentName'"
 $agentUrl = "$ProjectEndpoint/agents/$AgentName`?api-version=v1"
 # The Foundry data-plane firewall can transiently return 403 ("Access denied due to
@@ -177,12 +177,14 @@ for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
 }
 if (-not $agent) { throw "Failed to read agent '$AgentName' after $maxAttempts attempts (Foundry firewall never allowed the request). Confirm publicNetworkAccess=Enabled and your IP is allowlisted, then retry." }
 
-$principalId = $agent.instance_identity.principal_id
-if (-not $principalId) {
-    throw "Agent '$AgentName' has no unique identity (instance_identity.principal_id is null). See the Foundry agent migration guide."
+# The bot's app ID is the agent identity's client_id.
+$agentAppId = $agent.instance_identity.client_id
+if (-not $agentAppId) { $agentAppId = $agent.instance_identity.principal_id }
+if (-not $agentAppId) {
+    throw "Agent '$AgentName' has no unique identity (instance_identity is empty). See the Foundry agent migration guide."
 }
 $tenantId = az account show --query tenantId -o tsv
-Write-OK "principalId $principalId | tenant $tenantId"
+Write-OK "agent client ID $agentAppId | tenant $tenantId"
 
 # ── Plan summary ──────────────────────────────────────────────────────────────
 Write-Host ''
@@ -212,7 +214,7 @@ az deployment group create `
     --parameters `
         botName=$BotName `
         displayName=$DisplayName `
-        msaAppId=$principalId `
+        msaAppId=$agentAppId `
         tenantId=$tenantId `
         endpoint=$botEndpoint `
     --output none

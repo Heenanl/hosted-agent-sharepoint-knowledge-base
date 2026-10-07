@@ -37,7 +37,7 @@ user's access, so the user's token has to reach the retrieval step.
 | --- | --- |
 | [setup/](setup/) | Creates the knowledge base, the Foundry connection and the toolbox |
 | [sharepoint-kb-agent/](sharepoint-kb-agent/) | The hosted agent and its `azd` manifest |
-| [scripts/](scripts/) and [infra/](infra/) | Publish the agent to Microsoft Teams, including on private-network projects |
+| [scripts/](scripts/) and [infra/](infra/) | Publish to Microsoft Teams through the REST API. Needed for private-network projects |
 
 ## Prerequisites
 
@@ -49,7 +49,10 @@ user's access, so the user's token has to reach the retrieval step.
 
 You also need:
 
-- A Foundry project with a `gpt-4.1` (or equivalent) model deployment.
+- A Foundry project with a `gpt-4.1` (or equivalent) model deployment. Any project works. For a
+  private-network setup, deploy it with the
+  [private network standard agent setup](https://github.com/microsoft-foundry/foundry-samples/tree/main/infrastructure/infrastructure-setup-bicep/15-private-network-standard-agent-setup)
+  template.
 - An Azure AI Search service in a
   [region that supports agentic retrieval](https://learn.microsoft.com/azure/search/search-region-support),
   in the same Microsoft Entra tenant as Microsoft 365.
@@ -110,14 +113,23 @@ az role assignment create --assignee <GROUP_OBJECT_ID> --role "Search Index Data
 
 ## Publish to Teams
 
+**Project with public network access:** in the Foundry portal, open the agent and select
+**Publish to Teams and Microsoft Copilot**. Foundry creates and manages the Azure Bot for you, so
+you don't need the script or `infra/`.
+
+**Private-network project:** the portal button isn't available. Use the script, which follows the
+[REST publish flow](https://learn.microsoft.com/azure/foundry/agents/how-to/publish-copilot-virtual-network):
+it creates the Azure Bot from [bot-service.bicep](infra/bot-service.bicep), opens the agent's
+Activity Protocol route to Microsoft 365 traffic only, and calls the publish API.
+
 ```powershell
 <path-to-repo>/scripts/Publish-AgentToTeams.ps1 `
     -ResourceGroup <RESOURCE_GROUP> -AgentName sharepoint-kb-agent `
     -ProjectEndpoint https://<FOUNDRY_ACCOUNT>.services.ai.azure.com/api/projects/<PROJECT> `
-    -DisplayName "SharePoint KB Agent" -PublishScope Tenant -AppVersion 1.0.0
+    -UseM365PublicEndpoint -DisplayName "SharePoint KB Agent" -PublishScope Tenant -AppVersion 1.0.0
 ```
 
-- Add `-UseM365PublicEndpoint` if the Foundry project has public network access disabled.
+- Run it from a client that can reach the project's private endpoint.
 - `-PublishScope Tenant` needs Microsoft 365 admin approval. The default, `Shared`, publishes to you only.
 - Add `-WhatIf` to preview without changing anything.
 

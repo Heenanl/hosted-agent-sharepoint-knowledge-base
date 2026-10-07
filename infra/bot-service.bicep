@@ -17,7 +17,7 @@ param botName string
 @description('Display name shown to users.')
 param displayName string
 
-@description('Agent identity principal ID (instance_identity.principal_id from the Foundry Get agent API).')
+@description('Agent identity client ID (instance_identity.client_id from the Foundry Get agent API).')
 param msaAppId string
 
 @description('Microsoft Entra tenant ID.')
