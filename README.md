@@ -137,6 +137,8 @@ Activity Protocol route to Microsoft 365 traffic only, and calls the publish API
 - Run it from a client that can reach the project's private endpoint.
 - Azure Bot names are globally unique. The default bot name is the agent name plus a short hash
   of the project endpoint; pass `-BotName` to choose your own.
+- If you published this agent before, pass `-BotName` with the existing bot's name so the script
+  updates it instead of creating a second bot.
 - `-PublishScope Tenant` needs Microsoft 365 admin approval. The default, `Shared`, publishes to you only.
 - Add `-WhatIf` to preview without changing anything.
 
