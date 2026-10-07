@@ -47,7 +47,8 @@
     Activity-protocol api-version stamped on the bot endpoint. Default '2025-11-15-preview'.
 
 .PARAMETER BotName
-    Azure Bot resource name. Default: a sanitized form of the agent name.
+    Azure Bot resource name (globally unique). Default: a sanitized form of the agent
+    name plus a short hash of the project endpoint.
 
 .PARAMETER DisplayName
     Display name shown in Teams / Microsoft 365 Copilot. Default: the agent name.
@@ -150,9 +151,13 @@ $routing      = if ($UseM365PublicEndpoint) { 'Activity Protocol route (Microsof
 # ── Defaults derived from the agent ───────────────────────────────────────────
 if (-not $DisplayName) { $DisplayName = $AgentName }
 if (-not $BotName) {
+    # Bot names are globally unique, so suffix a stable hash of the project to avoid collisions.
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    $hash = -join ($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($ProjectEndpoint.ToLowerInvariant())) |
+        Select-Object -First 3 | ForEach-Object { $_.ToString('x2') })
     $clean = ($AgentName -replace '[^a-zA-Z0-9-]', '-').Trim('-')
-    if ($clean.Length -gt 42) { $clean = $clean.Substring(0, 42).Trim('-') }
-    $BotName = $clean
+    if ($clean.Length -gt 35) { $clean = $clean.Substring(0, 35).Trim('-') }
+    $BotName = "$clean-$hash"
 }
 
 # ── Step 1: agent identity client ID + tenant ID ───────────────────────────────
@@ -218,7 +223,11 @@ az deployment group create `
         tenantId=$tenantId `
         endpoint=$botEndpoint `
     --output none
-if ($LASTEXITCODE -ne 0) { throw "Bot deployment failed for '$BotName'." }
+if ($LASTEXITCODE -ne 0) {
+    $details = az deployment operation group list --resource-group $ResourceGroup --name $deploymentName `
+        --query "[?properties.provisioningState=='Failed'].properties.statusMessage.error.message" -o tsv 2>$null
+    throw "Bot deployment failed for '$BotName'. $details"
+}
 
 $botServiceArmId = az deployment group show --resource-group $ResourceGroup --name $deploymentName `
     --query 'properties.outputs.botServiceArmId.value' -o tsv

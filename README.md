@@ -55,7 +55,10 @@ You also need:
   template.
 - An Azure AI Search service in a
   [region that supports agentic retrieval](https://learn.microsoft.com/azure/search/search-region-support),
-  in the same Microsoft Entra tenant as Microsoft 365.
+  in the same Microsoft Entra tenant as Microsoft 365, with
+  [role-based access enabled](https://learn.microsoft.com/azure/search/search-security-enable-roles)
+  (`az search service update --auth-options aadOrApiKey`). On a new service, wait until
+  `az search service show --query status` returns `running` before running the setup scripts.
 - Azure CLI, Python 3.11+, PowerShell 7+, and `azd` 1.27.1+ with `azd ext install microsoft.foundry`.
 
 Grant the Search role to a security group of end users:
@@ -87,14 +90,16 @@ az role assignment create --assignee <GROUP_OBJECT_ID> --role "Search Index Data
    python .\create_toolbox.py
    ```
 
-3. **Deploy the hosted agent.** Run `azd ai agent init` from an empty folder and pass the absolute
-   path to [azure.yaml](sharepoint-kb-agent/azure.yaml).
+3. **Deploy the hosted agent.** Run `azd ai agent init` from an empty folder **outside this
+   repository** (the repo's `.gitignore` excludes `deploy/`, which makes `azd` fail with
+   `pathspec '*' did not match any files`), and pass the absolute path to
+   [azure.yaml](sharepoint-kb-agent/azure.yaml).
 
    ```powershell
    $PROJECT_ID = "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/<RESOURCE_GROUP>/providers/Microsoft.CognitiveServices/accounts/<FOUNDRY_ACCOUNT>/projects/<PROJECT>"
 
-   New-Item -ItemType Directory -Force -Path ./deploy | Out-Null
-   Set-Location ./deploy
+   New-Item -ItemType Directory -Force -Path "$HOME/sharepoint-kb-deploy" | Out-Null
+   Set-Location "$HOME/sharepoint-kb-deploy"
    azd ai agent init -m "<path-to-repo>/sharepoint-kb-agent/azure.yaml" `
      --project-id $PROJECT_ID --model-deployment gpt-4.1 --no-prompt --force -e sharepoint-kb
 
@@ -130,6 +135,8 @@ Activity Protocol route to Microsoft 365 traffic only, and calls the publish API
 ```
 
 - Run it from a client that can reach the project's private endpoint.
+- Azure Bot names are globally unique. The default bot name is the agent name plus a short hash
+  of the project endpoint; pass `-BotName` to choose your own.
 - `-PublishScope Tenant` needs Microsoft 365 admin approval. The default, `Shared`, publishes to you only.
 - Add `-WhatIf` to preview without changing anything.
 

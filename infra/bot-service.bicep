@@ -11,7 +11,7 @@
 
 targetScope = 'resourceGroup'
 
-@description('Azure Bot Service resource name (globally unique within the subscription).')
+@description('Azure Bot Service resource name (globally unique across Azure).')
 param botName string
 
 @description('Display name shown to users.')
