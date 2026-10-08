@@ -3,10 +3,21 @@
 ![Permission-aware SharePoint retrieval with hosted agents](images/blog-title-image.png)
 
 Build an agent on **hosted agents in Foundry Agent Service** that answers from SharePoint **as the
-signed-in user**, and publish it to Microsoft Teams. It uses a Foundry IQ knowledge base with a
-remote SharePoint knowledge source, connected through the Foundry toolbox, so every answer reflects
-what each person is allowed to open. There's no custom server to host and no client secret in the
-retrieval path.
+signed-in user**, and publish it to Microsoft Teams. It uses a
+[Foundry IQ](https://learn.microsoft.com/azure/foundry/agents/concepts/what-is-foundry-iq)
+[knowledge base](https://learn.microsoft.com/azure/search/agentic-retrieval-how-to-create-knowledge-base)
+with a [remote SharePoint knowledge source](https://learn.microsoft.com/azure/search/agentic-knowledge-source-how-to-sharepoint-remote),
+connected through the [Foundry toolbox](https://learn.microsoft.com/azure/foundry/agents/concepts/toolbox-overview),
+so every answer reflects what each person is allowed to open. There's no custom server to host and
+no client secret in the retrieval path.
+
+**How the pieces fit:** Foundry IQ is the knowledge layer, built on Azure AI Search. A knowledge
+base is its top-level resource: it orchestrates retrieval across one or more
+[knowledge sources](https://learn.microsoft.com/azure/search/agentic-knowledge-source-overview),
+which are connections to indexed or remote content. Here the only source is SharePoint, queried
+live with the user's identity through the
+[On-Behalf-Of (OBO)](https://learn.microsoft.com/entra/identity-platform/v2-oauth2-on-behalf-of-flow)
+pattern. The agent reaches the knowledge base through a toolbox.
 
 > **Note:** Remote SharePoint knowledge sources in Foundry IQ were in preview at the time of writing.
 
