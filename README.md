@@ -18,12 +18,19 @@ Hosted agents run as their own agent identity. That works for calling models, bu
 permissions belong to people. If retrieval runs as the agent, SharePoint can't check the asking
 user's access, so the user's token has to reach the retrieval step.
 
+Foundry creates each agent identity in Microsoft Entra from an **agent identity blueprint**, a
+template that governs a class of agents. Administrators can use the blueprint to apply Conditional
+Access, audit, or disable agents at scale. See
+[Agent identity concepts in Microsoft Foundry](https://learn.microsoft.com/azure/foundry/agents/concepts/agent-identity).
+
 ## How it works
 
 ![The agent runs as itself. Retrieval runs as the user.](images/foundry-iq-sharepoint-identity-sketch.png)
 
 1. **`FoundryToolbox`** in [main.py](sharepoint-kb-agent/src/sharepoint-kb-agent/main.py) sends the
-   per-request call ID with each tool call, so Foundry knows which user the call belongs to.
+   per-request call ID with each tool call, so Foundry knows which user the call belongs to. A
+   [Foundry toolbox](https://learn.microsoft.com/azure/foundry/agents/concepts/toolbox-overview)
+   exposes project tools to an agent through one MCP endpoint.
 2. **A `UserEntraToken` connection** passes that user's Microsoft Entra ID token to the knowledge
    base on Azure AI Search. This is identity passthrough (On-Behalf-Of).
 3. **A remote SharePoint knowledge source** queries SharePoint live through the Microsoft 365
@@ -45,7 +52,8 @@ user's access, so the user's token has to reach the retrieval step.
 | --- | --- |
 | Setup user | **Search Service Contributor** on the Azure AI Search service, and rights to create connections and toolboxes in the Foundry project |
 | End users | **Search Index Data Reader** on the Search service, **Foundry Agent Consumer** on the agent, a **Microsoft 365 Copilot** licence, and access to the documents in SharePoint |
-| Agent identity | **Foundry User** on the Foundry project, for model calls |
+
+The agent identity can call models in the project by default, so it needs no extra role.
 
 You also need:
 
@@ -156,6 +164,9 @@ Repeat the test after any permission change.
 
 ## Learn more
 
+- [What is a Foundry toolbox?](https://learn.microsoft.com/azure/foundry/agents/concepts/toolbox-overview)
+- [Use a toolbox with a hosted agent](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/use-toolbox-hosted-agent)
+- [Agent identity concepts in Microsoft Foundry](https://learn.microsoft.com/azure/foundry/agents/concepts/agent-identity)
 - [Create a remote SharePoint knowledge source](https://learn.microsoft.com/azure/search/agentic-knowledge-source-how-to-sharepoint-remote)
 - [Connect a Foundry IQ knowledge base to Foundry Agent Service](https://learn.microsoft.com/azure/foundry/agents/how-to/foundry-iq-connect)
 - [Toolbox authentication](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/tool-authentication)
