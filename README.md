@@ -44,7 +44,7 @@ agents that should answer **only from specific SharePoint sites**:
 | --- | --- | --- |
 | Scope | Microsoft 365 content the user can access | Only the SharePoint sites or paths you configure |
 | Narrowing | No per-site filter in the tool configuration | `filterExpression` on the knowledge source |
-| User consent | One-time OAuth consent per user | No separate tool consent |
+| Consent | One-time tenant-wide admin consent | No separate tool consent |
 | Tenant setup | Work IQ service principal (Global Administrator) | Azure AI Search service |
 | Licensing | Microsoft 365 Copilot licence or Copilot Credits | Microsoft 365 Copilot licence or Retrieval API pay-as-you-go, plus Azure AI Search |
 | Extending | Microsoft 365 content | Add other knowledge sources to the same knowledge base |
