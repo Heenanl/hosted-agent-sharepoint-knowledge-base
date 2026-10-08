@@ -3,10 +3,21 @@
 ![Permission-aware SharePoint retrieval with hosted agents](images/blog-title-image.png)
 
 Build an agent on **hosted agents in Foundry Agent Service** that answers from SharePoint **as the
-signed-in user**, and publish it to Microsoft Teams. It uses a Foundry IQ knowledge base with a
-remote SharePoint knowledge source, connected through the Foundry toolbox, so every answer reflects
-what each person is allowed to open. There's no custom server to host and no client secret in the
-retrieval path.
+signed-in user**, and publish it to Microsoft Teams. It uses a
+[Foundry IQ](https://learn.microsoft.com/azure/foundry/agents/concepts/what-is-foundry-iq)
+[knowledge base](https://learn.microsoft.com/azure/search/agentic-retrieval-how-to-create-knowledge-base)
+with a [remote SharePoint knowledge source](https://learn.microsoft.com/azure/search/agentic-knowledge-source-how-to-sharepoint-remote),
+connected through the [Foundry toolbox](https://learn.microsoft.com/azure/foundry/agents/concepts/toolbox-overview),
+so every answer reflects what each person is allowed to open. There's no custom server to host and
+no client secret in the retrieval path.
+
+**How the pieces fit:** Foundry IQ is the knowledge layer, built on Azure AI Search. A knowledge
+base is its top-level resource: it orchestrates retrieval across one or more
+[knowledge sources](https://learn.microsoft.com/azure/search/agentic-knowledge-source-overview),
+which are connections to indexed or remote content. Here the only source is SharePoint, queried
+live with the user's identity through the
+[On-Behalf-Of (OBO)](https://learn.microsoft.com/entra/identity-platform/v2-oauth2-on-behalf-of-flow)
+pattern. The agent reaches the knowledge base through a toolbox.
 
 > **Note:** Remote SharePoint knowledge sources in Foundry IQ were in preview at the time of writing.
 
@@ -18,12 +29,37 @@ Hosted agents run as their own agent identity. That works for calling models, bu
 permissions belong to people. If retrieval runs as the agent, SharePoint can't check the asking
 user's access, so the user's token has to reach the retrieval step.
 
+Foundry creates each agent identity in Microsoft Entra from an **agent identity blueprint**, a
+template that governs a class of agents. Administrators can use the blueprint to apply Conditional
+Access, audit, or disable agents at scale. See
+[Agent identity concepts in Microsoft Foundry](https://learn.microsoft.com/azure/foundry/agents/concepts/agent-identity).
+
+## Why not Work IQ?
+
+[Work IQ](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/work-iq) also retrieves as
+the signed-in user, and it's the right choice for broad Microsoft 365 context. This pattern is for
+agents that should answer **only from specific SharePoint sites**:
+
+| | Work IQ | Foundry IQ knowledge base (this pattern) |
+| --- | --- | --- |
+| Scope | Microsoft 365 content the user can access | Only the SharePoint sites or paths you configure |
+| Narrowing | No per-site filter in the tool configuration | `filterExpression` on the knowledge source |
+| User consent | One-time OAuth consent per user | No separate tool consent |
+| Tenant setup | Work IQ service principal (Global Administrator) | Azure AI Search service |
+| Licensing | Microsoft 365 Copilot licence or Copilot Credits | Microsoft 365 Copilot licence or Retrieval API pay-as-you-go, plus Azure AI Search |
+| Extending | Microsoft 365 content | Add other knowledge sources to the same knowledge base |
+
+Use Work IQ when the agent should reason over a user's wider work context. Use this pattern when
+SharePoint is a governed knowledge source with a defined boundary.
+
 ## How it works
 
 ![The agent runs as itself. Retrieval runs as the user.](images/foundry-iq-sharepoint-identity-sketch.png)
 
 1. **`FoundryToolbox`** in [main.py](sharepoint-kb-agent/src/sharepoint-kb-agent/main.py) sends the
-   per-request call ID with each tool call, so Foundry knows which user the call belongs to.
+   per-request call ID with each tool call, so Foundry knows which user the call belongs to. A
+   [Foundry toolbox](https://learn.microsoft.com/azure/foundry/agents/concepts/toolbox-overview)
+   exposes project tools to an agent through one MCP endpoint.
 2. **A `UserEntraToken` connection** passes that user's Microsoft Entra ID token to the knowledge
    base on Azure AI Search. This is identity passthrough (On-Behalf-Of).
 3. **A remote SharePoint knowledge source** queries SharePoint live through the Microsoft 365
@@ -44,8 +80,9 @@ user's access, so the user's token has to reach the retrieval step.
 | Role | Required permissions |
 | --- | --- |
 | Setup user | **Search Service Contributor** on the Azure AI Search service, and rights to create connections and toolboxes in the Foundry project |
-| End users | **Search Index Data Reader** on the Search service, **Foundry Agent Consumer** on the agent, a **Microsoft 365 Copilot** licence, and access to the documents in SharePoint |
-| Agent identity | **Foundry User** on the Foundry project, for model calls |
+| End users | **Search Index Data Reader** on the Search service, **Foundry Agent Consumer** on the agent, a **Microsoft 365 Copilot** licence (or [Retrieval API pay-as-you-go](https://learn.microsoft.com/microsoft-365/copilot/extensibility/api/ai-services/retrieval/paygo-retrieval)), and access to the documents in SharePoint |
+
+The agent identity can call models in the project by default, so it needs no extra role.
 
 You also need:
 
@@ -156,6 +193,9 @@ Repeat the test after any permission change.
 
 ## Learn more
 
+- [What is a Foundry toolbox?](https://learn.microsoft.com/azure/foundry/agents/concepts/toolbox-overview)
+- [Use a toolbox with a hosted agent](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/use-toolbox-hosted-agent)
+- [Agent identity concepts in Microsoft Foundry](https://learn.microsoft.com/azure/foundry/agents/concepts/agent-identity)
 - [Create a remote SharePoint knowledge source](https://learn.microsoft.com/azure/search/agentic-knowledge-source-how-to-sharepoint-remote)
 - [Connect a Foundry IQ knowledge base to Foundry Agent Service](https://learn.microsoft.com/azure/foundry/agents/how-to/foundry-iq-connect)
 - [Toolbox authentication](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/tool-authentication)
