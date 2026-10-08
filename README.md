@@ -23,6 +23,24 @@ template that governs a class of agents. Administrators can use the blueprint to
 Access, audit, or disable agents at scale. See
 [Agent identity concepts in Microsoft Foundry](https://learn.microsoft.com/azure/foundry/agents/concepts/agent-identity).
 
+## Why not Work IQ?
+
+[Work IQ](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/work-iq) also retrieves as
+the signed-in user, and it's the right choice for broad Microsoft 365 context. This pattern is for
+agents that should answer **only from specific SharePoint sites**:
+
+| | Work IQ | Foundry IQ knowledge base (this pattern) |
+| --- | --- | --- |
+| Scope | Microsoft 365 content the user can access | Only the SharePoint sites or paths you configure |
+| Narrowing | No per-site filter in the tool configuration | `filterExpression` on the knowledge source |
+| User consent | One-time OAuth consent per user | No separate tool consent |
+| Tenant setup | Work IQ service principal (Global Administrator) | Azure AI Search service |
+| Licensing | Microsoft 365 Copilot licence or Copilot Credits | Microsoft 365 Copilot licence or Retrieval API pay-as-you-go, plus Azure AI Search |
+| Extending | Microsoft 365 content | Add other knowledge sources to the same knowledge base |
+
+Use Work IQ when the agent should reason over a user's wider work context. Use this pattern when
+SharePoint is a governed knowledge source with a defined boundary.
+
 ## How it works
 
 ![The agent runs as itself. Retrieval runs as the user.](images/foundry-iq-sharepoint-identity-sketch.png)
@@ -51,7 +69,7 @@ Access, audit, or disable agents at scale. See
 | Role | Required permissions |
 | --- | --- |
 | Setup user | **Search Service Contributor** on the Azure AI Search service, and rights to create connections and toolboxes in the Foundry project |
-| End users | **Search Index Data Reader** on the Search service, **Foundry Agent Consumer** on the agent, a **Microsoft 365 Copilot** licence, and access to the documents in SharePoint |
+| End users | **Search Index Data Reader** on the Search service, **Foundry Agent Consumer** on the agent, a **Microsoft 365 Copilot** licence (or [Retrieval API pay-as-you-go](https://learn.microsoft.com/microsoft-365/copilot/extensibility/api/ai-services/retrieval/paygo-retrieval)), and access to the documents in SharePoint |
 
 The agent identity can call models in the project by default, so it needs no extra role.
 
